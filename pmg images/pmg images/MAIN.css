@@ -1,0 +1,36 @@
+*{
+    margin:0%;
+    padding: 0%;;
+    text-decoration: none;
+    list-style: none;
+    box-sizing: border-box;
+    font-family:montserrat;
+}
+#header{
+    background-color: #0082e6;
+    width:100%;
+    min-height: 80px;
+    margin:0%;
+    padding: 10px;
+    color:rgb(255, 255, 255);
+    padding-left: 40px;
+    color:white;
+    font-size: 35px;
+}
+.logo{
+    color:white;
+    font-size: 35px;
+    padding-right: 10px;
+    float:left ;
+}
+
+#header ul a{
+    margin:5px;
+
+}
+#header ul li{
+    padding-right: 10px;
+    margin:0 5px;
+    float:right ;
+    display: inline-block;
+    }

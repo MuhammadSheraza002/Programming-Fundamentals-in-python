@@ -1,0 +1,244 @@
+
+PBM, PGM, and PPM files
+File information
+PBM, PGM, and PPM files are all image file formats that hold data in regards to pixels of an image. Compared to formats like PNG, JPG, etc, these formats are very simplistic, offering no compression. These are simple formats that store the colours of pixels as bytes which can be read into your program.
+
+There are 3 types for a reason:
+
+PBM (Portable BitMap) - 2 colours only. Black and White (0-1)
+PGM (Portable GrayMap) - 255 colours only. Black-Gray-White (0-255)
+PPM (Portable PixMap) - 16,777,216 colours. Coloured RGB (0-255, 0-255, 0-255)
+Each of these files also contain a magic number (Wikipedia) which tells if the information is stored as text or as bytes. We will cover this later in the documentation.
+
+What these files look like (PPM Text Format)
+Let's get directly into the details. For this example, we will use PPM files since they are the most used. Try opening up a PPM file in a text editor of your choice (as opposed to an image viewer). If the format of the PPM file is stored as numbers, you will likely see this garbage:
+
+P3
+3 2
+255
+255   0   0     0 255   0     0   0 255
+255 255   0   255 255 255     0   0   0
+This is a 3x2 image that I stole from Wikipedia (It was public domain, hah). As it is 3x2, it is a very small image. Here is what it looks like when scaled up:
+
+
+
+Breaking it down (PPM Text Format)
+So you either found out how this format works by now (Because it is simple), or you just want me to explain it. Let's look at that last file again. I will colour code the first three lines.
+
+P3
+3 2
+255
+255   0   0     0 255   0     0   0 255
+255 255   0   255 255 255     0   0   0
+P3 - Magic Number (Tells the program this is a PPM file)
+3 - Width
+2 - Height
+255 - Colour Range (0 = Black, This Number = White)
+Everything beyond these numbers is pixel information about the image. Let's get to that.
+
+255   0   0     0 255   0     0   0 255
+255 255   0   255 255 255     0   0   0
+We all have used Microsoft Paint before, at least I hope we have. We know the image has a size of 3x2. Since this is also a PPM file (Since the "P3" Magic Number was there), we can read the file accordingly. A PPM file stores 3 numbers per pixel. The first is the RED value, followed by the GREEN value, and then finally the BLUE value.
+In relation to the data, let's colour code it.
+
+255   0   0     0 255   0     0   0 255
+255 255   0   255 255 255     0   0   0
+Therefore, the first pixel has an RGB value of (255, 0, 0), which is literally red. Second pixel has an RGB value of (0, 255, 0), which is literally green. And so forth. Looking back at our image above, that is pretty accurate.
+Here are some common colours you should know on the top of your head:
+
+Name	Red	Green	Blue	Preview
+Black	0	0	0	
+ 
+Gray	127	127	127	
+ 
+Red	255	0	0	
+ 
+Green	0	255	0	
+ 
+Blue	0	0	255	
+ 
+Yellow	255	255	0	
+ 
+Magenta	255	0	255	
+ 
+Cyan	0	255	255	
+ 
+White	255	255	255	
+ 
+
+In relation to the image:
+
+
+
+Name	Red	Green	Blue	Preview
+Red	255	0	0	
+ 
+Green	0	255	0	
+ 
+Blue	0	0	255	
+ 
+Yellow	255	255	0	
+ 
+White	255	255	255	
+ 
+Black	0	0	0	
+ 
+
+These are very simple colours and I am barely breaking the ice with this one. However, you should be getting the concept by now.
+
+Text Format vs Binary Format?
+Up to this point, I have been generous to you, showing you examples with a very simple image file. However, realistically, computers read things differently than humans do. They like binary compared to numbers/text. Let's look at the file above one more time:
+
+P3
+3 2
+255
+255   0   0     0 255   0     0   0 255
+255 255   0   255 255 255     0   0   0
+This is the text format. Notice how the numbers after the "255" colour range identifier are human readable numbers. What determines whether or not a program should read a file like this as binary or text is its magic number at the very top of the file. Here is a table of how the magic number works for PBM, PGM, and PPM files (Highlighted Yellow the type of the file we talked about up to this point):
+
+Magic Number	File Type	Extension	Type
+P1	Portable BitMap	PBM	ASCII
+P2	Portable GrayMap	PGM	ASCII
+P3	Portable PixMap	PPM	ASCII
+P4	Portable BitMap	PBM	Binary
+P5	Portable GrayMap	PGM	Binary
+P6	Portable PixMap	PPM	Binary
+P7	Portable ArbitraryMap	PAM	Unknown
+"So Clara, what does a binary PPM file look like?"
+Glad you asked. Chances are that your web browser can't even support it being shown here... so I'll just show you a hex dump screenshot.
+
+
+
+As you can see, the first 3 lines are readable text (line break = 0x0A). Notice the magic number is "P6". This isn't that bad either to be honest. Since the file is binary, we can store information on a colour in 3 bytes as opposed to the text format which stored a byte for a "single number". Horrible. As a result, binary files are much smaller than their ASCII counterparts. Don't believe me?
+
+
+
+96 bytes for ASCII vs 29 bytes for Binary. And they both store the exact same information.
+
+Reading these files in C++ (PPM Text Format)
+Now for the main attraction. Chances are that you are reading this guide because you want to write a program to read and manipulate such files in C++ (Maybe for a CS140/302 assignment? Did I guess it?). Hopefully your mind is wrapped around C++ classes and structs fairly well, because you are going to need them.
+
+To begin, you will need to declare a struct that can hold RGB values. Since computer colours of a 24-bit depth are guaranteed not to go over 255 (0xFF * 0xFF * 0xFF), we can use unsigned char to store each of them.
+
+#include <iostream>
+using namespace std;
+
+struct RGB {
+    //Constructor to set R, G, and B to 0 automatically.
+    RGB() : R(0), G(0), B(0) {};
+
+    //Values
+    unsigned char R, G, B;
+};
+
+int main() {
+    return;
+}
+Now we are armed and dangerous to hold colour data. How are we going to read the data though from a text formatted PPM file? For now, we will stick to using a simple method of pushing to vectors. There are better ways, of course. We will need to make a class for the PPM data. It should look like this:
+#include <cstdlib>
+#include <fstream>
+#include <string>
+#include <vector>
+
+class PPM {
+    public:
+        PPM();
+        void open(const string&);
+        RGB& get(unsigned int, unsigned int);
+        unsigned int getWidth();
+        unsigned int getHeight();
+
+    private:
+        unsigned int width, height;
+        vector<RGB> pixels;
+};
+So again, this is barely cutting it. How will we implement the constructor?
+PPM::PPM() {
+    width = 0;
+    height = 0;
+}
+Now that we have the default values set up, let's work on PPM::open(const string&).
+void PPM::open(const string& path) {
+    ifstream fp(path.c_str());
+    if (fp.fail())
+        return; //You failed
+
+    //Read the Magic Number
+    string mg_num, width_str, height_str, range_str;
+    fp >> mg_num;
+
+    if (mg_num != "P3") {
+        fp.close();
+        return; //The file is not a ASCII PPM file!
+    }
+
+    fp >> width_str >> height_str >> range_str;
+    width  = atoi(width_str .c_str()); //Takes the number string and converts it to an integer
+    height = atoi(height_str.c_str());
+
+    //Obliterate the vector
+    pixels.clear();
+
+    //Read the values into the vector directly.
+    RGB tmp;
+    string _R, _G, _B;
+    for (unsigned int i = 0; i < width * height; i++) {
+        fp >> _R >> _G >> _B;
+        tmp.R = atoi(R.c_str());
+        tmp.G = atoi(G.c_str());
+        tmp.B = atoi(B.c_str());
+
+        pixels.push_back(tmp);
+    }
+
+    fp.close();
+}
+Does this look scary? Do you feel like it is too much? I break down this code here. Feel free to read it if you want to understand it more.
+Now let's implement PPM::get():
+
+RGB& PPM::get(unsigned int a, unsigned int b) {
+    return pixels[(b * width) + a];
+}
+This returns a reference to the RGB object stored in a vector at a certain position. Remember, we are using a 1D vector to store 2D information. So the size of the vector is width * height. Therefore, at position 0 in the vector, we are at (0, 0) in the image. Position 1, we are at (1, 0), etc. If we were loading the image used as an example above, it was a 3x2 image. So pixels[3] = (0, 1), pixels[4] = (1, 1), pixels[5] = (2, 1), etc. Obviously, the function would result in a segfault if the coordinates requested are outside the vector's range (which is what we want).
+Finally, the functions for getting information on the image itself:
+
+unsigned int PPM::getWidth() {
+    return width;
+}
+
+unsigned int PPM::getHeight() {
+    return height;
+}
+This returns a reference to the RGB object stored in a vector at a certain position. Remember, we are using a 1D vector to store 2D information. So the size of the vector is width * height. Therefore, at position 0 in the vector, we are at (0, 0) in the image. Position 1, we are at (1, 0), etc. If we were loading the image used as an example above, it was a 3x2 image. So pixels[3] = (0, 1), pixels[4] = (1, 1), pixels[5] = (2, 1), etc. Obviously, the function would result in a segfault if the coordinates requested are outside the vector's range (which is what we want).
+So now that we have the class implemented, how about actually using it in a program?
+
+//...Includes & Namespace...//
+//...RGB Struct...//
+//...PPM Class...//
+
+int main() {
+    PPM img;                      //Initialised PPM Object
+    img.open("6colour_ppma.ppm"); //Open PPM file
+
+    unsigned int size = img.getWidth() * img.getHeight();
+    for (unsigned int b = 0; b < img.getHeight(); b++) {
+        for (unsigned int a = 0; a < img.getWidth(); a++) {
+            RGB& ref_colour = img.get(a, b);
+            cout << "RGB {" << (int)ref_colour.R << ", " << (int)ref_colour.G << ", " << (int)ref_colour.B << "}" << endl;
+        }
+    }
+}
+This program will take each colour from the image, left-to-right, then up-to-down, and print them to stdout. In the example image above, this is the output:
+RGB {255, 0, 0}
+RGB {0, 255, 0}
+RGB {0, 0, 255}
+RGB {255, 255, 0}
+RGB {255, 255, 255}
+RGB {0, 0, 0}
+Additionally, you can modify the values of the pixels too by simply using "ref_colour.R = 127", etc. Since it is a reference to the data in the vector, it will modify the data in the class directly.
+
+Download and try yourself
+I want you to learn C++. But if you want to compile this program and see how it works for yourself, download the image and the CPP file, compile it, and see how it works.
+Download: [main.cpp] [6colour_ppma.ppm]
+
+
